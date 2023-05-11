@@ -7,19 +7,13 @@ package cmd
 import (
 	"os"
 
+	"github.com/ninostephen/munge/models"
 	"github.com/ninostephen/munge/worker"
 	"github.com/spf13/cobra"
 )
 
-type flags struct {
-	word   string
-	input  string
-	output string
-	level  int
-}
-
 var (
-	flagvals     flags
+	flagvals     models.Flags
 	wordlist     []string
 	leetSpeakMap = map[string]string{
 		"e": "3",
@@ -70,7 +64,7 @@ var rootCmd = &cobra.Command{
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 
-		worker.Start(cmd)
+		worker.Start(cmd, flagvals)
 	},
 }
 
@@ -83,10 +77,10 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&flagvals.word, "word", "w", "", "word to munge")
-	rootCmd.Flags().IntVarP(&flagvals.level, "level", "l", 2, "munge level [1-3] (default 2)")
-	rootCmd.Flags().StringVarP(&flagvals.input, "input", "i", "", "input file")
-	rootCmd.Flags().StringVarP(&flagvals.output, "output", "o", "", "output file")
+	rootCmd.Flags().StringVarP(&flagvals.Word, "word", "w", "", "word to munge")
+	rootCmd.Flags().IntVarP(&flagvals.Level, "level", "l", 2, "munge level [1-3] (default 2)")
+	rootCmd.Flags().StringVarP(&flagvals.Input, "input", "i", "", "input file")
+	rootCmd.Flags().StringVarP(&flagvals.Output, "output", "o", "", "output file")
 }
 
 // // mudge command triggers functions based on level which was passed as argument.

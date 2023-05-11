@@ -12,18 +12,11 @@ import (
 	"sync"
 	"unicode"
 
+	"github.com/ninostephen/munge/models"
 	"github.com/spf13/cobra"
 )
 
-type flags struct {
-	word   string
-	input  string
-	output string
-	level  int
-}
-
 var (
-	flagvals     flags
 	leetSpeakMap = map[string]string{
 		"e": "3",
 		"a": "4",
@@ -145,7 +138,7 @@ func expert(word string) []string {
 }
 
 // Start function does all the mudging
-func Start(cmd *cobra.Command) {
+func Start(cmd *cobra.Command, flagvals models.Flags) {
 	var wordlist []string
 	// Create a task queue channel to hold the mutation tasks
 	taskQueue := make(chan string)
@@ -153,23 +146,23 @@ func Start(cmd *cobra.Command) {
 	// Create a completed queue channel to hold the results of muation tasks
 	completedQueue := make(chan string)
 
-	if flagvals.level > 3 {
-		flagvals.level = 3
-	} else if flagvals.level < 0 {
-		flagvals.level = 0
+	if flagvals.Level > 3 {
+		flagvals.Level = 3
+	} else if flagvals.Level < 0 {
+		flagvals.Level = 0
 	}
 
-	if flagvals.word != "" {
+	if flagvals.Word != "" {
 		// if wa word was passed in, just munge that
-		wordlist = munge(strings.ToLower(flagvals.word), flagvals.level)
+		wordlist = munge(strings.ToLower(flagvals.Word), flagvals.Level)
 		for _, finalWord := range wordlist {
 			completedQueue <- finalWord
 		}
 
-	} else if _, err := os.Stat(flagvals.input); err == nil {
+	} else if _, err := os.Stat(flagvals.Input); err == nil {
 		// Now that we confirmed that the input file exist, we can now
 		// open the input file and start reading
-		inputFile, err := os.Open(flagvals.input)
+		inputFile, err := os.Open(flagvals.Input)
 		if err != nil {
 			fmt.Printf("Failed to open input file: %v \n", err)
 			return
@@ -217,7 +210,7 @@ func Start(cmd *cobra.Command) {
 
 				// Process tasks from the task queue
 				for word := range taskQueue {
-					mutatedList := munge(word, flagvals.level) // Call the mutation function on the word
+					mutatedList := munge(word, flagvals.Level) // Call the mutation function on the word
 					for _, mutation := range mutatedList {
 						completedQueue <- mutation
 					}
@@ -230,9 +223,9 @@ func Start(cmd *cobra.Command) {
 		return
 	}
 
-	if flagvals.output != "" {
+	if flagvals.Output != "" {
 		// create an output outputFile or just print the data using an if else.
-		outputFile, err := os.Create(flagvals.output)
+		outputFile, err := os.Create(flagvals.Output)
 		if err != nil {
 			fmt.Printf("Error creating output file: %v \n", err)
 			return
