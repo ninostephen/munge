@@ -1,4 +1,4 @@
-module github.com/ninostephen/mungeGoBrrrrr
+module github.com/ninostephen/munge
 
 go 1.20
 

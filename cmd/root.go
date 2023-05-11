@@ -5,13 +5,9 @@ Copyright © 2023 Nino Stephen <ninostephen.me>
 package cmd
 
 import (
-	"bufio"
-	"fmt"
 	"os"
-	"sort"
-	"strings"
-	"unicode"
 
+	"github.com/ninostephen/munge/worker"
 	"github.com/spf13/cobra"
 )
 
@@ -73,7 +69,8 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		start(cmd)
+
+		worker.Start(cmd)
 	},
 }
 
@@ -92,151 +89,332 @@ func init() {
 	rootCmd.Flags().StringVarP(&flagvals.output, "output", "o", "", "output file")
 }
 
-// mudge command triggers functions based on level which was passed as argument.
-func munge(word string, level int) {
-	switch level {
-	case 1:
-		basic(word)
-	case 2:
-		advanced(word)
-	case 3:
-		expert(word)
-	}
-}
+// // mudge command triggers functions based on level which was passed as argument.
+// func munge(word string, level int) {
+// 	switch level {
+// 	case 1:
+// 		basic(word)
+// 	case 2:
+// 		advanced(word)
+// 	case 3:
+// 		expert(word)
+// 	}
+// }
 
-// swapcase function toggles characters from lowercase to uppercase and wiseversa
-func swapcase(word string) string {
-	swapped := ""
-	for _, char := range word {
-		if unicode.IsUpper(char) {
-			swapped += strings.ToLower(string(char))
-		} else if unicode.IsLower(char) {
-			swapped += strings.ToUpper(string(char))
-		} else {
-			swapped += string(char)
-		}
-	}
-	return swapped
-}
+// // swapcase function toggles characters from lowercase to uppercase and wiseversa
+// func swapcase(word string) string {
+// 	swapped := ""
+// 	for _, char := range word {
+// 		if unicode.IsUpper(char) {
+// 			swapped += strings.ToLower(string(char))
+// 		} else if unicode.IsLower(char) {
+// 			swapped += strings.ToUpper(string(char))
+// 		} else {
+// 			swapped += string(char)
+// 		}
+// 	}
+// 	return swapped
+// }
 
-// replace function replaces characters in the word with leetSpeak and appends postfix numbers
-func replace(word string, chars map[string]string, nums []string) {
-	for char, val := range chars {
-		word = strings.ReplaceAll(word, char, val)
-		wordlist = append(wordlist, word)
-		for _, val = range nums {
-			wordlist = append(wordlist, word+val)
+// // replace function replaces characters in the word with leetSpeak and appends postfix numbers
+// func replace(word string, chars map[string]string, nums []string) {
+// 	for char, val := range chars {
+// 		word = strings.ReplaceAll(word, char, val)
+// 		wordlist = append(wordlist, word)
+// 		for _, val = range nums {
+// 			wordlist = append(wordlist, word+val)
 
-		}
-	}
-}
+// 		}
+// 	}
+// }
 
-// removeDuplicateStr removes all duplicate strings
-func removeDuplicateStr(strSlice []string) []string {
-	allKeys := make(map[string]bool)
-	list := []string{}
-	for _, item := range strSlice {
-		if _, value := allKeys[item]; !value {
-			allKeys[item] = true
-			list = append(list, item)
-		}
-	}
-	return list
-}
+// // removeDuplicateStr removes all duplicate strings
+// func removeDuplicateStr(strSlice []string) []string {
+// 	allKeys := make(map[string]bool)
+// 	list := []string{}
+// 	for _, item := range strSlice {
+// 		if _, value := allKeys[item]; !value {
+// 			allKeys[item] = true
+// 			list = append(list, item)
+// 		}
+// 	}
+// 	return list
+// }
 
-// basic function does all the magic for level 1
-func basic(word string) {
-	wordlist = append(wordlist, word)
-	wordlist = append(wordlist, strings.ToUpper(word))
-	wordlist = append(wordlist, strings.ToTitle(word))
-	temp := strings.ToTitle(word)
-	wordlist = append(wordlist, swapcase(temp))
-}
+// // basic function does all the magic for level 1
+// func basic(word string) {
+// 	wordlist = append(wordlist, word)
+// 	wordlist = append(wordlist, strings.ToUpper(word))
+// 	wordlist = append(wordlist, strings.ToTitle(word))
+// 	temp := strings.ToTitle(word)
+// 	wordlist = append(wordlist, swapcase(temp))
+// }
 
-// advanced function does the calculations for level 2
-func advanced(word string) {
-	basic(word)
-	replace(word, leetSpeakMap, level2Postfix)
+// // advanced function does the calculations for level 2
+// func advanced(word string) {
+// 	basic(word)
+// 	replace(word, leetSpeakMap, level2Postfix)
 
-}
+// }
 
-// expert function does all the work for level 3
-func expert(word string) {
-	advanced(word)
-	replace(word, leetSpeakMap, level3Postfix)
-}
+// // expert function does all the work for level 3
+// func expert(word string) {
+// 	advanced(word)
+// 	replace(word, leetSpeakMap, level3Postfix)
+// }
 
-func start(cmd *cobra.Command) {
-	if flagvals.level > 3 {
-		flagvals.level = 3
-	} else if flagvals.level < 0 {
-		flagvals.level = 0
-	}
-	if flagvals.word != "" {
-		munge(
-			strings.ToLower(flagvals.word),
-			flagvals.level,
-		)
-	} else if flagvals.input != "" {
-		file, err := os.Open(flagvals.input)
-		if err != nil {
-			fmt.Println("Error opening file:", err)
-			return
-		}
-		defer file.Close()
+// var scannerPool = sync.Pool{
+// 	New: func() interface{} {
+// 		return bufio.NewScanner(nil)
+// 	},
+// }
 
-		// Create a scanner to read the file line by line
-		scanner := bufio.NewScanner(file)
+// func start2(cmd *cobra.Command) {
 
-		// Read the file line by line
-		for scanner.Scan() {
-			word := scanner.Text()
-			munge(strings.TrimSpace(word), flagvals.level)
-		}
+// 	var wg sync.WaitGroup
 
-		// Check for any scanner errors
-		if err := scanner.Err(); err != nil {
-			fmt.Println("Error reading file:", err)
-		}
+// 	if flagvals.input != "" {
+// 		file, err := os.Open(flagvals.input)
+// 		if err != nil {
+// 			fmt.Println("Error opening file:", err)
+// 			return
+// 		}
+// 		defer file.Close()
 
-	} else {
-		cmd.Help()
-		return
-	}
-	sort.SliceStable(wordlist, func(i, j int) bool {
-		return wordlist[i] < wordlist[j]
-	})
-	wordlist = removeDuplicateStr(wordlist)
-	if flagvals.output != "" {
-		file, err := os.Create(flagvals.output)
-		if err != nil {
-			fmt.Println("Error creating file:", err)
-			return
-		}
-		defer file.Close()
+// 		// Obtain a scanner from the pool
+// 		scanner := scannerPool.Get().(*bufio.Scanner)
+// 		// scanner.Reset(file)
 
-		// Create a writer for the file
-		writer := bufio.NewWriter(file)
+// 		// Start a goroutine to read the file line by line
+// 		wg.Add(1)
+// 		go func() {
+// 			defer wg.Done()
 
-		// Write each word to the file
-		for _, word := range wordlist {
-			_, err := writer.WriteString(word + "\n")
-			if err != nil {
-				fmt.Println("Error writing to file:", err)
-				return
-			}
-		}
+// 			for scanner.Scan() {
+// 				word := scanner.Text()
+// 				munge(strings.TrimSpace(word), flagvals.level)
+// 			}
 
-		// Flush the writer to ensure all data is written to the file
-		err = writer.Flush()
-		if err != nil {
-			fmt.Println("Error flushing writer:", err)
-			return
-		}
+// 			if err := scanner.Err(); err != nil {
+// 				fmt.Println("Error reading file:", err)
+// 			}
 
-		fmt.Println("Word list written to file successfully.")
-	} else {
-		fmt.Println(strings.Join(wordlist, "\n"))
-	}
+// 			// Put the scanner back into the pool
+// 			scannerPool.Put(scanner)
+// 		}()
+// 	} else {
+// 		cmd.Help()
+// 		return
+// 	}
+// 	// Create a channel to receive the processed words
+// 	wordChan := make(chan string)
 
-}
+// 	// Start a goroutine to write the words to the output file or print to stdout
+// 	if flagvals.output != "" {
+// 		file, err := os.Create(flagvals.output)
+// 		if err != nil {
+// 			fmt.Println("Error creating file:", err)
+// 			return
+// 		}
+// 		defer file.Close()
+
+// 		// Create a writer for the file
+// 		writer := bufio.NewWriter(file)
+
+// 		// Start a goroutine to write the words to the file
+// 		wg.Add(1)
+// 		go func() {
+// 			defer wg.Done()
+
+// 			for word := range wordChan {
+// 				_, err := writer.WriteString(word + "\n")
+// 				if err != nil {
+// 					fmt.Println("Error writing to file:", err)
+// 					return
+// 				}
+// 			}
+
+// 			// Flush the writer to ensure all data is written to the file
+// 			err := writer.Flush()
+// 			if err != nil {
+// 				fmt.Println("Error flushing writer:", err)
+// 				return
+// 			}
+// 		}()
+// 	} else {
+// 		// Start a goroutine to print the words to stdout
+// 		wg.Add(1)
+// 		go func() {
+// 			defer wg.Done()
+
+// 			for word := range wordChan {
+// 				fmt.Println(word)
+// 			}
+// 		}()
+// 	}
+
+// 	// Process the string if word is provided
+// 	if flagvals.word != "" {
+// 		munge(
+// 			strings.ToLower(flagvals.word),
+// 			flagvals.level,
+// 		)
+// 	}
+
+// 	// Wait for all goroutines to finish
+// 	wg.Wait()
+
+// 	fmt.Println("Word list processed successfully.")
+
+// }
+
+// func start(cmd *cobra.Command) {
+// 	// sanitize level val
+// 	if flagvals.level > 3 {
+// 		flagvals.level = 3
+// 	} else if flagvals.level < 0 {
+// 		flagvals.level = 0
+// 	}
+// 	// if a word is passed in, just process that else process everything in the file
+// 	if flagvals.word != "" {
+// 		munge(
+// 			strings.ToLower(flagvals.word),
+// 			flagvals.level,
+// 		)
+// 	} else if flagvals.input != "" {
+// 		file, err := os.Open(flagvals.input)
+// 		if err != nil {
+// 			fmt.Println("Error opening file:", err)
+// 			return
+// 		}
+// 		defer file.Close()
+
+// 		// Create a scanner to read the file line by line
+// 		scanner := bufio.NewScanner(file)
+
+// 		// Read the file line by line
+// 		for scanner.Scan() {
+// 			word := scanner.Text()
+// 			munge(strings.TrimSpace(word), flagvals.level)
+// 		}
+
+// 		// Check for any scanner errors
+// 		if err := scanner.Err(); err != nil {
+// 			fmt.Println("Error reading file:", err)
+// 		}
+
+// 	} else {
+// 		cmd.Help()
+// 		return
+// 	}
+// 	sort.SliceStable(wordlist, func(i, j int) bool {
+// 		return wordlist[i] < wordlist[j]
+// 	})
+// 	wordlist = removeDuplicateStr(wordlist)
+// 	if flagvals.output != "" {
+// 		file, err := os.Create(flagvals.output)
+// 		if err != nil {
+// 			fmt.Println("Error creating file:", err)
+// 			return
+// 		}
+// 		defer file.Close()
+
+// 		// Create a writer for the file
+// 		writer := bufio.NewWriter(file)
+
+// 		// Write each word to the file
+// 		for _, word := range wordlist {
+// 			_, err := writer.WriteString(word + "\n")
+// 			if err != nil {
+// 				fmt.Println("Error writing to file:", err)
+// 				return
+// 			}
+// 		}
+
+// 		// Flush the writer to ensure all data is written to the file
+// 		err = writer.Flush()
+// 		if err != nil {
+// 			fmt.Println("Error flushing writer:", err)
+// 			return
+// 		}
+
+// 		fmt.Println("Word list written to file successfully.")
+// 	} else {
+// 		fmt.Println(strings.Join(wordlist, "\n"))
+// 	}
+
+// }
+
+// func startOld(cmd *cobra.Command) {
+// 	if flagvals.level > 3 {
+// 		flagvals.level = 3
+// 	} else if flagvals.level < 0 {
+// 		flagvals.level = 0
+// 	}
+// 	if flagvals.word != "" {
+// 		munge(
+// 			strings.ToLower(flagvals.word),
+// 			flagvals.level,
+// 		)
+// 	} else if flagvals.input != "" {
+// 		file, err := os.Open(flagvals.input)
+// 		if err != nil {
+// 			fmt.Println("Error opening file:", err)
+// 			return
+// 		}
+// 		defer file.Close()
+
+// 		// Create a scanner to read the file line by line
+// 		scanner := bufio.NewScanner(file)
+
+// 		// Read the file line by line
+// 		for scanner.Scan() {
+// 			word := scanner.Text()
+// 			munge(strings.TrimSpace(word), flagvals.level)
+// 		}
+
+// 		// Check for any scanner errors
+// 		if err := scanner.Err(); err != nil {
+// 			fmt.Println("Error reading file:", err)
+// 		}
+
+// 	} else {
+// 		cmd.Help()
+// 		return
+// 	}
+// 	sort.SliceStable(wordlist, func(i, j int) bool {
+// 		return wordlist[i] < wordlist[j]
+// 	})
+// 	wordlist = removeDuplicateStr(wordlist)
+// 	if flagvals.output != "" {
+// 		file, err := os.Create(flagvals.output)
+// 		if err != nil {
+// 			fmt.Println("Error creating file:", err)
+// 			return
+// 		}
+// 		defer file.Close()
+
+// 		// Create a writer for the file
+// 		writer := bufio.NewWriter(file)
+
+// 		// Write each word to the file
+// 		for _, word := range wordlist {
+// 			_, err := writer.WriteString(word + "\n")
+// 			if err != nil {
+// 				fmt.Println("Error writing to file:", err)
+// 				return
+// 			}
+// 		}
+
+// 		// Flush the writer to ensure all data is written to the file
+// 		err = writer.Flush()
+// 		if err != nil {
+// 			fmt.Println("Error flushing writer:", err)
+// 			return
+// 		}
+
+// 		fmt.Println("Word list written to file successfully.")
+// 	} else {
+// 		fmt.Println(strings.Join(wordlist, "\n"))
+// 	}
+// }
