@@ -156,24 +156,20 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 	}
 
 	if flagvals.Word != "" {
-		// println("Closing Task Queue since we don't need it when munging a single word")
 		// We don't need the task queue if we are just working with a word
 		close(taskQueue)
+
 		// if a word was passed in, just munge that
-		// println("Munging word: ", flagvals.Word)
 		wordlist = munge(flagvals.Word, flagvals.Level)
-		// fmt.Println(wordlist)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			// println("launching go routine")
+
 			for _, finalWord := range wordlist {
-				// println("Adding word to completed Queue: ", finalWord)
 				completedQueue <- finalWord
-				// println("Added word")
 			}
+			println("Completed adding words to completed queue")
 		}()
-		// println("Completed adding words to completed queue")
 
 	} else if _, err := os.Stat(flagvals.Input); err == nil {
 		// Now that we confirmed that the input file exist, we can now
@@ -188,9 +184,10 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 
 		// Create a reader to read the file line by line
 		reader := bufio.NewReader(inputFile)
-
+		wg.Add(1)
 		go func() {
-			println("Launched go routine to reading the file line by line")
+			defer close(taskQueue)
+			defer wg.Done()
 			// Read the file and distribute mutation tasks among Goroutines
 			for {
 				// Read a line from the file
@@ -201,7 +198,7 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 					}
 					break // Exit the loop when done reading
 				}
-				println("Pushing word to task queue: ", word)
+				println("Pushed: ", word)
 				// Push the word into the task queue for processing by a Goroutine
 				taskQueue <- word
 			}
@@ -225,15 +222,17 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 				for word := range taskQueue {
 					mutatedList := munge(word, flagvals.Level) // Call the mutation function on the word
 					for _, mutation := range mutatedList {
-						fmt.Printf("Agent %d added word %v to completed queue", agentID, mutation)
-						completedQueue <- mutation
+						if mutation != "" {
+							fmt.Printf("Agent %d Pushed %v", agentID, mutation)
+							completedQueue <- mutation
+						}
 					}
 				}
 
 			}()
 		}
 		// Close the task queue to signal that no more tasks will be added
-		defer close(taskQueue)
+		// defer close(taskQueue)
 
 	} else {
 		close(completedQueue)
@@ -251,21 +250,23 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 			return
 		}
 		defer outputFile.Close()
-
+		wg.Add(1)
 		go func() {
-			println("Launched file write go routine")
+			defer close(completedQueue)
+			defer wg.Done()
+			// println("Launched file write go routine")
 			for finalWord := range completedQueue {
-				println("Writing word to file: ", finalWord)
-				_, err := outputFile.WriteString(finalWord + "\n")
+				println("Wrote: ", finalWord)
+				_, err := outputFile.WriteString(finalWord)
 				if err != nil {
 					fmt.Println("Error writing to file:", err)
 					return
 				}
 			}
-
+			println("completed!")
 		}()
-		defer close(completedQueue)
-		fmt.Println("Word list written to file successfully.")
+
+		// fmt.Println("Word list written to file successfully.")
 	} else {
 		go func() {
 			// println("Reading words from completed queue")
@@ -275,8 +276,9 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 			}
 
 		}()
-		defer close(completedQueue)
-		// Wait for all Goroutines to finish before exiting the program
-		wg.Wait()
+
 	}
+	defer close(completedQueue)
+	// Wait for all Goroutines to finish before exiting the program
+	wg.Wait()
 }
