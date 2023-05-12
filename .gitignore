@@ -24,4 +24,6 @@ go.work
 bin/
 temp/
 
+# ignore test input files
 test.txt
+out.txt
