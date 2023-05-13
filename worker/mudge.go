@@ -158,8 +158,6 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 		go addWordToQueue(flagvals.Word, flagvals.Level, &wg, &completedQueue)
 
 	} else if _, err := os.Stat(flagvals.Input); err == nil {
-
-		println("Initiating input file read: ", flagvals.Input)
 		inputFile, err := os.Open(flagvals.Input)
 		if err != nil {
 			fmt.Printf("Failed to open input file: %v \n", err)
@@ -170,7 +168,6 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 		go parseFile(inputFile, &wg, &taskQueue)
 
 		maxGoroutines := runtime.NumCPU()
-		println("Identified Max number of Go routines: ", maxGoroutines)
 		atomic.AddInt32(&activeAgents, int32(maxGoroutines))
 
 		for agentID := 0; agentID < maxGoroutines; agentID++ {
@@ -225,14 +222,15 @@ func writeFile(outputFile *os.File, wg *sync.WaitGroup, completedQueue *chan str
 			close(*completedQueue)
 			break
 		}
-		println("Wrote: ", finalWord)
+		if finalWord == "" {
+			continue
+		}
 		_, err := outputFile.WriteString(finalWord)
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 			return
 		}
 	}
-	println("completed!")
 	wg.Done()
 }
 
@@ -242,7 +240,7 @@ func printFromQueue(completedQueue *chan string, wg *sync.WaitGroup) {
 			close(*completedQueue)
 			break
 		}
-		fmt.Println("Mutated word:", finalWord)
+		fmt.Printf(finalWord)
 	}
 	wg.Done()
 }
@@ -254,14 +252,12 @@ func addWordToQueue(word string, level int, wg *sync.WaitGroup, completedQueue *
 	for _, finalWord := range wordlist {
 		*completedQueue <- finalWord
 	}
-	println("Completed adding words to completed queue")
 	*completedQueue <- "<EOL>"
 	wg.Done()
 
 }
 
 func genWorkers(agentID int, level int, wg *sync.WaitGroup, taskQueue, completedQueue *chan string) {
-	println("Agent launched: ", agentID)
 
 	for word := range *taskQueue {
 		mutatedList := munge(word, level)
