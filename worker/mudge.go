@@ -10,12 +10,15 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"unicode"
 
 	"github.com/ninostephen/munge/models"
 	"github.com/spf13/cobra"
 )
 
+var activeAgents int32
+var mut int
 var (
 	leetSpeakMap = map[string]string{
 		"e": "3",
@@ -151,8 +154,11 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 	}
 
 	if flagvals.Word != "" {
+
 		wg.Add(1)
-		go addToQueueSingular(flagvals.Word, flagvals.Level, &wg, &completedQueue)
+		mut++
+		println("Mut added for addToQueueSingular: ", mut)
+		go addWordToQueue(flagvals.Word, flagvals.Level, &wg, &completedQueue)
 
 	} else if _, err := os.Stat(flagvals.Input); err == nil {
 
@@ -164,13 +170,18 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 		}
 
 		wg.Add(1)
+		mut++
+		println("Mut added for parseFile: ", mut)
 		go parseFile(inputFile, &wg, &taskQueue)
 
 		maxGoroutines := runtime.NumCPU()
 		println("Identified Max number of Go routines: ", maxGoroutines)
+		atomic.AddInt32(&activeAgents, int32(maxGoroutines))
 
 		for agentID := 0; agentID < maxGoroutines; agentID++ {
 			wg.Add(1)
+			mut++
+			println("Mut added for agent ", agentID, ": ", mut)
 			go genWorkers(agentID, flagvals.Level, &wg, &taskQueue, &completedQueue)
 		}
 
@@ -190,19 +201,23 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 		}
 		defer outputFile.Close()
 		wg.Add(1)
+		mut++
+		println("Mut added for writeFile: ", mut)
 		go writeFile(outputFile, &wg, &completedQueue)
 	} else {
 		wg.Add(1)
+		mut++
+		println("Mut added for printFromQueue: ", mut)
 		go printFromQueue(&completedQueue, &wg)
 	}
-
+	println("Number of Mutexes", mut)
 	wg.Wait()
 }
 
 func parseFile(inputFile *os.File, wg *sync.WaitGroup, taskQueue *chan string) {
 	defer inputFile.Close()
 	reader := bufio.NewReader(inputFile)
-	defer wg.Done()
+	// defer wg.Done()
 	for {
 		word, err := reader.ReadString('\n')
 		if err != nil {
@@ -211,59 +226,89 @@ func parseFile(inputFile *os.File, wg *sync.WaitGroup, taskQueue *chan string) {
 			}
 			break
 		}
-		println("Pushed: ", word)
+		// println("Pushed: ", word)
 		*taskQueue <- word
 	}
-
+	mut--
+	close(*taskQueue)
+	println("Mut removed for parseFile: ", mut)
+	wg.Done()
 }
 func writeFile(outputFile *os.File, wg *sync.WaitGroup, completedQueue *chan string) {
-	defer wg.Done()
+	// defer wg.Done()
 
 	for finalWord := range *completedQueue {
+		if finalWord == "<EOL>" {
+			close(*completedQueue)
+			break
+		}
 		println("Wrote: ", finalWord)
-		_, err := outputFile.WriteString(finalWord + "\n")
+		_, err := outputFile.WriteString(finalWord)
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 			return
 		}
 	}
 	println("completed!")
-	close(*completedQueue)
+	mut--
+	println("Mut removed for writeFile: ", mut)
+	wg.Done()
 }
 
 func printFromQueue(completedQueue *chan string, wg *sync.WaitGroup) {
-	defer wg.Done()
-	defer close(*completedQueue)
-
+	// defer wg.Done()
+	// defer close(*completedQueue)
 	for finalWord := range *completedQueue {
+		if finalWord == "<EOL>" {
+			close(*completedQueue)
+			break
+		}
 		fmt.Println("Mutated word:", finalWord)
 	}
-
+	wg.Done()
+	mut--
+	println("Mut removed for printFromQueue: ", mut)
+	// close(*completedQueue)
 }
 
-func addToQueueSingular(word string, level int, wg *sync.WaitGroup, completedQueue *chan string) {
+func addWordToQueue(word string, level int, wg *sync.WaitGroup, completedQueue *chan string) {
 	var wordlist []string
 	wordlist = munge(word, level)
-	defer wg.Done()
-
+	// defer wg.Done()
+	fmt.Println(wordlist)
 	for _, finalWord := range wordlist {
 		*completedQueue <- finalWord
 	}
 	println("Completed adding words to completed queue")
+	*completedQueue <- "<EOL>"
+	mut--
+	println("Mut removed for addWordToQueue: ", mut)
+	wg.Done()
+
 }
 
 func genWorkers(agentID int, level int, wg *sync.WaitGroup, taskQueue, completedQueue *chan string) {
-	defer wg.Done()
+	// defer wg.Done()
 	println("Agent launched: ", agentID)
 
 	for word := range *taskQueue {
 		mutatedList := munge(word, level)
 		for _, mutation := range mutatedList {
 			if mutation != "" {
-				fmt.Printf("Agent %d Pushed %v", agentID, mutation)
+				// fmt.Printf("Agent %d Pushed %v", agentID, mutation)
 				*completedQueue <- mutation
 			}
 		}
 	}
-	close(*taskQueue)
+
+	atomic.AddInt32(&activeAgents, -1)
+
+	if atomic.LoadInt32(&activeAgents) == 0 {
+		*completedQueue <- "<EOL>"
+	}
+
+	// close(*taskQueue)
+	mut--
+	println("Mut removed for agent ", agentID, ": ", mut)
+	wg.Done()
 }
