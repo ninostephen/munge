@@ -2,6 +2,8 @@
 
 This program is a word munging tool that mutates words based on different levels of complexity. It provides functionalities to transform words using basic, advanced, and expert level mutations. The mutated words are then sorted and duplicates are removed, resulting in a list of unique and sorted mutated words.
 
+Munge was rewrote in go because [John Hammond (rightfully) felt cringe](https://youtu.be/nNvhK1LUD48?t=694) to run the python2 version of the script.
+
 ## Features:
 
 - Basic Level Mutations: Swapping case (lowercase to uppercase and vice versa) and title case variations.
