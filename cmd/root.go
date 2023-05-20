@@ -1,4 +1,4 @@
-// Package cmd is the root of all thing Munge Go Brrrrr!!!!!
+// Package cmd is the root of all thing Munge
 /*
 Copyright © 2023 Nino Stephen <ninostephen.me>
 */
@@ -18,7 +18,7 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "mudge",
+	Use:   "munge",
 	Short: "Dirty little word munger",
 	Long: `
  ______                              
@@ -36,7 +36,7 @@ var rootCmd = &cobra.Command{
  \_____/  \___/   |______/ |_|    |_|    |_|    |_|    |_|    |_||_||_||_||_|
                               Copyright © 2023 Nino Stephen <ninostephen.me>   
 	
-	A faster version of Mudge by Th3S3cr3tAg3nt
+	A golang port of Mudge by Th3S3cr3tAg3nt
 	
 	`,
 	// Uncomment the following line if your bare application

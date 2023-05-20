@@ -1,4 +1,4 @@
-// Package worker provides all the Mudge functions.
+// Package worker provides all the Munge functions.
 package worker
 
 import (
@@ -40,7 +40,7 @@ var (
 	}
 )
 
-// mudge mutates the words based on level, sorts and removes duplicates before returning
+// Munge mutates the words based on level, sorts and removes duplicates before returning
 // a slice of mutated words
 func munge(word string, level int) []string {
 	var mutatedWord []string
