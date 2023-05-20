@@ -86,3 +86,5 @@ Specify a single word to be mutated.
 Use the appropriate flags to customize the behavior of the word munging tool according to your requirements.
 
 Note: Make sure to provide the necessary input and output files and ensure the required packages are imported for the program to function correctly.
+
+[The associated linked in post was liked by the Legend John Hammond himself](https://www.linkedin.com/feed/update/urn:li:activity:7065523897311363073?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A7065523897311363073%2C7065542130395451392%29&dashCommentUrn=urn%3Ali%3Afsd_comment%3A%287065542130395451392%2Curn%3Ali%3Aactivity%3A7065523897311363073%29)!
