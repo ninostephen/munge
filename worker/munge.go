@@ -1,5 +1,11 @@
-// Package worker provides all the Munge functions.
+// Package worker provides the core functionality for the Munge application.
 package worker
+
+//
+// This package includes functions for mutating words based on different levels,
+// sorting and removing duplicates from the mutated words, and performing various
+// operations related to word manipulation.
+//
 
 import (
 	"bufio"
@@ -40,8 +46,8 @@ var (
 	}
 )
 
-// Munge mutates the words based on level, sorts and removes duplicates before returning
-// a slice of mutated words
+// munge mutates the words based on the specified level, sorts them, and removes duplicates.
+// It returns a slice of mutated words.
 func munge(word string, level int) []string {
 	var mutatedWord []string
 	switch level {
@@ -53,7 +59,7 @@ func munge(word string, level int) []string {
 		mutatedWord = expert(word)
 	}
 
-	// sort the mutated words and remove duplicates
+	// Sort the mutated words and remove duplicates
 	sort.SliceStable(mutatedWord, func(i, j int) bool {
 		return mutatedWord[i] < mutatedWord[j]
 	})
@@ -62,7 +68,8 @@ func munge(word string, level int) []string {
 	return mutatedWord
 }
 
-// swapcase function toggles characters from lowercase to uppercase and vise-versa
+// swapcase toggles characters from lowercase to uppercase and vice versa in a word.
+// It returns the word with swapped case.
 func swapcase(word string) string {
 	swapped := ""
 	for _, char := range word {
@@ -77,8 +84,8 @@ func swapcase(word string) string {
 	return swapped
 }
 
-// replace mutates strings to leetspeak and appends commonly used numbers to it before returning a
-// slice of mutated words
+// replace mutates the word by replacing characters in it with leetspeak characters
+// and appends commonly used numbers to it. It returns a slice of mutated words.
 func replace(word string, chars map[string]string, nums []string) []string {
 	var wordlist []string
 	for char, val := range chars {
@@ -92,7 +99,8 @@ func replace(word string, chars map[string]string, nums []string) []string {
 	return wordlist
 }
 
-// removeDuplicateStr removes all duplicate strings
+// removeDuplicateStr removes all duplicate strings from a string slice.
+// It returns a new slice with unique strings.
 func removeDuplicateStr(strSlice []string) []string {
 	allKeys := make(map[string]bool)
 	list := []string{}
@@ -105,7 +113,7 @@ func removeDuplicateStr(strSlice []string) []string {
 	return list
 }
 
-// basic function does basic level mutiations and returns a wordlist
+// basic performs basic level mutations on a word and returns a wordlist.
 func basic(word string) []string {
 	var wordlist []string
 
@@ -119,7 +127,7 @@ func basic(word string) []string {
 	return wordlist
 }
 
-// advanced function does level 2 mutations
+// advanced performs advanced level mutations on a word and returns a wordlist.
 func advanced(word string) []string {
 	var wordlist []string
 
@@ -129,7 +137,7 @@ func advanced(word string) []string {
 	return wordlist
 }
 
-// expert function does level 3 mutations
+// expert performs expert level mutations on a word and returns a wordlist.
 func expert(word string) []string {
 	var wordlist []string
 
@@ -139,7 +147,7 @@ func expert(word string) []string {
 	return wordlist
 }
 
-// Start function does all the mudging
+// Start begins the Munge process with the specified flags.
 func Start(cmd *cobra.Command, flagvals models.Flags) {
 
 	var wg sync.WaitGroup
@@ -199,6 +207,7 @@ func Start(cmd *cobra.Command, flagvals models.Flags) {
 	wg.Wait()
 }
 
+// parseFile reads words from the input file and adds them to the task queue.
 func parseFile(inputFile *os.File, wg *sync.WaitGroup, taskQueue *chan string) {
 	defer inputFile.Close()
 	reader := bufio.NewReader(inputFile)
@@ -215,6 +224,8 @@ func parseFile(inputFile *os.File, wg *sync.WaitGroup, taskQueue *chan string) {
 	close(*taskQueue)
 	wg.Done()
 }
+
+// writeFile writes the final mutated words to the output file.
 func writeFile(outputFile *os.File, wg *sync.WaitGroup, completedQueue *chan string) {
 
 	for finalWord := range *completedQueue {
@@ -234,6 +245,7 @@ func writeFile(outputFile *os.File, wg *sync.WaitGroup, completedQueue *chan str
 	wg.Done()
 }
 
+// printFromQueue prints the final mutated words from the completed queue.
 func printFromQueue(completedQueue *chan string, wg *sync.WaitGroup) {
 	for finalWord := range *completedQueue {
 		if finalWord == "<EOL>" {
@@ -245,6 +257,7 @@ func printFromQueue(completedQueue *chan string, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
+// addWordToQueue adds a single word to the task queue for mutation.
 func addWordToQueue(word string, level int, wg *sync.WaitGroup, completedQueue *chan string) {
 	var wordlist []string
 	wordlist = munge(word, level)
@@ -257,6 +270,7 @@ func addWordToQueue(word string, level int, wg *sync.WaitGroup, completedQueue *
 
 }
 
+// genWorkers generates worker goroutines that mutate words from the task queue.
 func genWorkers(agentID int, level int, wg *sync.WaitGroup, taskQueue, completedQueue *chan string) {
 
 	for word := range *taskQueue {

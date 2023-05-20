@@ -1,4 +1,4 @@
-// Package cmd is the root of all thing Munge
+// Package cmd is the root package of the Munge application.
 /*
 Copyright © 2023 Nino Stephen <ninostephen.me>
 */
@@ -33,8 +33,7 @@ Copyright © 2023 Nino Stephen <ninostephen.me>
 	A golang port of Mudge by Th3S3cr3tAg3nt
 	
 	`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
+
 	Run: func(cmd *cobra.Command, args []string) {
 		worker.Start(cmd, flagvals)
 	},
